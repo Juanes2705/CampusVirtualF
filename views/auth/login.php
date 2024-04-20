@@ -1,9 +1,12 @@
 <main class="auth">
     <h2 class="auth__heading"><?php echo $titulo ?></h2>
     <p class="auth__texto">Iniciar Sesión</p>
+
+    <?php 
+        require_once __DIR__ . '/../templates/alertas.php'
+    ?>
     
-    
-    <form class="formulario">
+    <form method="POST" action="/login" class="formulario">
         <div class="formulario__campo">
             <label for="email" class="formulario__label">Email</label>
             <input 
@@ -16,13 +19,13 @@
         </div>
 
         <div class="formulario__campo">
-            <label for="contraseña" class="formulario__label">Contraseña</label>
+            <label for="password" class="formulario__label">Contraseña</label>
             <input 
-                type="contraseña"
+                type="password"
                 class="formulario__input"
                 placeholder="Tu Contraseña"
-                id="contraseña"
-                name="contraseña"
+                id="password"
+                name="password"
             >
         </div>
 

@@ -1,8 +1,8 @@
-
+@use 'base/mixins' as m;
+@use 'base/variables' as v;
 .auth{
-    max-width: 120rem;
-    margin: 0 auto;
+    @include m.contenedor-sm;
+
 }
-body{
-    background-color: red;
-}
+
+
