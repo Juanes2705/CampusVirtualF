@@ -2,7 +2,7 @@
     <div class="dashboard__header--grid">
         <a href="/">
             <h2 class="dashboard__logo">
-                Instituto GCB
+                Instituto GCB...
             </h2>
         </a>
 

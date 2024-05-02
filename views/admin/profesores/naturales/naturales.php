@@ -30,7 +30,7 @@
                         <?php echo $profesores->nombre . " " . $profesores->apellido; ?>
                     </td>
                     <td class="table__td">
-                        <?php echo $profesores->correo; ?>
+                        <?php echo $profesores->email; ?>
                     </td>
                     <td class="table__td">
                         <?php echo $profesores->tags; ?>

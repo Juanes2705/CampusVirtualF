@@ -2,9 +2,9 @@
 
 namespace Model;
 
-class Profesores extends ActiveRecord{
-    protected static $tabla = 'profesores';
-    protected static $columnasDB = ['id', 'nombre', 'apellido', 'email', 'password', 'tags','confirmado', 'token', 'profe'];
+class Estudiantes extends ActiveRecord{
+    protected static $tabla = 'estudiantes';
+    protected static $columnasDB = ['id', 'nombre', 'apellido', 'email', 'password', 'grado','confirmado', 'token', 'estudiante'];
 
 
     public function __construct($args = [])
@@ -14,10 +14,10 @@ class Profesores extends ActiveRecord{
         $this->apellido = $args['apellido'] ?? '';
         $this->email = $args['email'] ?? '';
         $this->password = $args['password'] ?? '';
-        $this->tags = $args['tags'] ?? '';
+        $this->grado = $args['grado'] ?? '';
         $this->confirmado = $args['confirmado'] ?? 1;
         $this->token = $args['token'] ?? '';
-        $this->profe = $args['profe'] ?? 1;
+        $this->estudiante = $args['estudiante'] ?? 1;
         
     }
 
@@ -34,7 +34,7 @@ class Profesores extends ActiveRecord{
         if(!$this->password) {
             self::$alertas['error'][] = 'El Campo Contraseña es Obligatorio';
         }
-        if(!$this->tags) {
+        if(!$this->grado) {
             self::$alertas['error'][] = 'El Campo áreas es obligatorio';
         }
     

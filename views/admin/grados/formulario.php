@@ -10,8 +10,8 @@
             name="email" 
             id="email"
             class="formulario__input"
-            placeholder="Correo Profesor"
-            value="<?php echo $profesor->email ?? ''; ?>">
+            placeholder="Correo estudiante"
+            value="<?php echo $estudiante->email ?? ''; ?>">
     </div>
 
     <div class="formulario__campo">
@@ -21,8 +21,8 @@
             name="nombre" 
             id="nombre"
             class="formulario__input"
-            placeholder="Nombre Profesor"
-            value="<?php echo $profesor->nombre ?? ''; ?>">
+            placeholder="Nombre estudiante"
+            value="<?php echo $estudiante->nombre ?? ''; ?>">
     </div>
     <div class="formulario__campo">
         <label for="apellido" class="formulario__label">Apellido</label>
@@ -31,8 +31,8 @@
             name="apellido" 
             id="apellido"
             class="formulario__input"
-            placeholder="Apellido Profesor"
-            value="<?php echo $profesor->apellido ?? ''; ?>">
+            placeholder="Apellido estudiante"
+            value="<?php echo $estudiante->apellido ?? ''; ?>">
     </div>
     <div class="formulario__campo">
         <label for="password" class="formulario__label">Contraseña</label>
@@ -41,8 +41,8 @@
             name="password" 
             id="password"
             class="formulario__input"
-            placeholder="Contraseña Profesor"
-            value="<?php echo $profesor->password ?? ''; ?>">
+            placeholder="Contraseña estudiante"
+            value="<?php echo $estudiante->password ?? ''; ?>">
     </div>
 </fieldset>
 
@@ -50,15 +50,15 @@
     <legend class="formulario__legend">Información Extra</legend>
 
     <div class="formulario__campo">
-        <label for="tags_input" class="formulario__label">Experiencia (separadas por coma)</label>
+        <label for="grado_input" class="formulario__label">Experiencia (separadas por coma)</label>
         <input
             type="text"
             class="formulario__input"
-            id="tags_input"
-            placeholder="Ej. Matematiscas, Ingles, Naturales, Sociales, Informatica, Español"
+            id="grado_input"
+            placeholder="Ej. Noveno, Decimo, Once"
         >
 
-        <div id="tags" class="formulario__listado"></div>
-        <input type="hidden" name="tags" value="<?php echo $profesor->tags ?? ''; ?>"> 
+        <div id="grado" class="formulario__listado"></div>
+        <input type="hidden" name="grado" value="<?php echo $estudiante->grado ?? ''; ?>"> 
     </div>
 </fieldset>

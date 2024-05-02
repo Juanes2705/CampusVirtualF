@@ -1,6 +1,6 @@
 <?php return array(
     'root' => array(
-        'name' => 'juandelatorre/devwebcamp',
+        'name' => 'Campues virtual Instituto GCB',
         'pretty_version' => '1.0.0+no-version-set',
         'version' => '1.0.0.0',
         'reference' => null,
@@ -37,7 +37,7 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'juandelatorre/devwebcamp' => array(
+        'jCampues virtual Instituto GCB' => array(
             'pretty_version' => '1.0.0+no-version-set',
             'version' => '1.0.0.0',
             'reference' => null,

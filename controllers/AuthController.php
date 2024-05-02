@@ -4,54 +4,70 @@ namespace Controllers;
 
 use Classes\Email;
 use Model\Usuario;
+use Model\Profesores;
+use Model\Estudiantes;
 use MVC\Router;
 
 class AuthController {
     public static function login(Router $router) {
-
         $alertas = [];
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $_POST['email'] ?? '';
+            $password = $_POST['password'] ?? '';
 
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
-            $usuario = new Usuario($_POST);
+            // Buscar en las tres tablas
+            $usuario = Usuario::where('email', $email);
+            $profesor = Profesores::where('email', $email);
+            $estudiante = Estudiantes::where('email', $email);  
 
-            $alertas = $usuario->validarLogin();
-            
-            if(empty($alertas)) {
-                // Verificar quel el usuario exista
-                $usuario = Usuario::where('email', $usuario->email);
-                if(!$usuario || !$usuario->confirmado ) {
-                    Usuario::setAlerta('error', 'El Usuario No Existe o no esta confirmado');
+            if (!$usuario && !$profesor && !$estudiante) {
+                $alertas['error'][] = 'Usuario/Profesor/Estudiante no existe.';
+            } else {
+                $login_success = false;
+                $tipo_usuario = null;
+
+                // Verificar la contraseña para cada tipo de usuario
+                if ($usuario && password_verify($password, $usuario->password)) {
+                    $login_success = true;
+                    $tipo_usuario = 'admin'; // Es un administrador
+                } elseif ($profesor && password_verify($password, $profesor->password)) {
+                    $login_success = true;
+                    $tipo_usuario = 'profe'; // Es un profesor
+                } elseif ($estudiante && password_verify($password, $estudiante->password)) {
+                    $login_success = true;
+                    $tipo_usuario = 'estudiante'; // Es un estudiante
                 } else {
-                    // El Usuario existe
-                    if( password_verify($_POST['password'], $usuario->password) ) {
-                        
-                        // Iniciar la sesión
-                        session_start();    
+                    $alertas['error'][] = 'Contraseña incorrecta.';
+                }
+
+                if ($login_success) {
+                    // Iniciar sesión y redireccionar según el tipo de usuario
+                    session_start();
+
+                    if ($tipo_usuario === 'admin') {
                         $_SESSION['id'] = $usuario->id;
                         $_SESSION['nombre'] = $usuario->nombre;
                         $_SESSION['apellido'] = $usuario->apellido;
                         $_SESSION['email'] = $usuario->email;
-                        $_SESSION['admin'] = $usuario->admin ?? null;
-
-                        // Redirección 
-                        if($usuario->admin) {
-                            header('Location: /admin/dashboard');
-                        } else {
-                            header('Location: /finalizar-registro');
-                        }
-                        
-                    } else {
-                        Usuario::setAlerta('error', 'Password Incorrecto');
+                        header('Location: /admin/dashboard'); // Redireccionar al dashboard de administradores
+                    } elseif ($tipo_usuario === 'profe') {
+                        $_SESSION['id'] = $profesor->id;
+                        $_SESSION['nombre'] = $profesor->nombre;
+                        $_SESSION['apellido'] = $profesor->apellido;
+                        $_SESSION['email'] = $profesor->correo;
+                        header('Location: /profe/dashboard'); // Redireccionar al dashboard de profesores
+                    } elseif ($tipo_usuario === 'estudiante') {
+                        $_SESSION['id'] = $estudiante->id;
+                        $_SESSION['nombre'] = $estudiante->nombre;
+                        $_SESSION['apellido'] = $estudiante->apellido;
+                        $_SESSION['email'] = $estudiante->email;
+                        header('Location: /estudiante/dashboard'); // Redireccionar al dashboard de estudiantes
                     }
                 }
             }
         }
 
-        $alertas = Usuario::getAlertas();
-        
-        // Render a la vista 
         $router->render('auth/login', [
             'titulo' => 'Iniciar Sesión',
             'alertas' => $alertas
@@ -59,198 +75,206 @@ class AuthController {
     }
 
     public static function logout() {
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_start();
-            $_SESSION = [];
+            session_destroy();
             header('Location: /');
         }
-       
     }
 
     public static function registro(Router $router) {
         $alertas = [];
-        $usuario = new Usuario;
+        $usuario = new Usuario();
 
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
-
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $usuario->sincronizar($_POST);
-            
             $alertas = $usuario->validar_cuenta();
 
-            if(empty($alertas)) {
+            if (empty($alertas)) {
+                // Verificar si el usuario ya existe
                 $existeUsuario = Usuario::where('email', $usuario->email);
 
-                if($existeUsuario) {
-                    Usuario::setAlerta('error', 'El Usuario ya esta registrado');
-                    $alertas = Usuario::getAlertas();
+                if ($existeUsuario) {
+                    $alertas['error'][] = 'El Usuario ya está registrado.';
                 } else {
-                    // Hashear el password
                     $usuario->hashPassword();
-
-                    // Eliminar password2
-                    unset($usuario->password2);
-
-                    // Generar el Token
                     $usuario->crearToken();
 
-                    // Crear un nuevo usuario
-                    $resultado =  $usuario->guardar();
+                    $usuario->guardar();
 
-                    // Enviar email
-                    $email = new Email($usuario->email, $usuario->nombre, $usuario->token);
-                    $email->enviarConfirmacion();
-                    
+                    $emailObj = new Email($usuario->email, $usuario->nombre, $usuario->token);
+                    $emailObj->enviarConfirmacion();
 
-                    if($resultado) {
-                        header('Location: /mensaje');
-                    }
+                    header('Location: /mensaje'); // Redirección al enviar
                 }
             }
         }
 
-        // Render a la vista
         $router->render('auth/registro', [
-            'titulo' => 'Crea tu cuenta en DevWebcamp',
-            'usuario' => $usuario, 
-            'alertas' => $alertas
+            'titulo' => 'Crear Cuenta',
+            'alertas' => $alertas,
+            'usuario' => $usuario
         ]);
     }
 
     public static function olvide(Router $router) {
         $alertas = [];
-        
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $usuario = new Usuario($_POST);
-            $alertas = $usuario->validarEmail();
+    
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $_POST['email'] ?? '';
+    
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $alertas['error'][] = 'Correo electrónico inválido.';
+            } else {
+                // Buscar usuario y profesor por el correo electrónico proporcionado
+                $usuario = Usuario::where('email', $email);
+                $profesor = Profesores::where('email', $email);
+                $estudiante = Estudiantes::where('email', $email);
 
-            if(empty($alertas)) {
-                // Buscar el usuario
-                $usuario = Usuario::where('email', $usuario->email);
-
-                if($usuario && $usuario->confirmado) {
-
-                    // Generar un nuevo token
+    
+                if ($usuario && $usuario->confirmado) {
+                    // Usuario encontrado y confirmado
                     $usuario->crearToken();
-                    
-                    unset($usuario->password2);
-
-                    // Actualizar el usuario
                     $usuario->guardar();
-
-                    // Enviar el email
-                    $email = new Email( $usuario->email, $usuario->nombre, $usuario->token );
-                    $email->enviarInstrucciones();
-
-
-                    // Imprimir la alerta
-                    // Usuario::setAlerta('exito', 'Hemos enviado las instrucciones a tu email');
-
-                    $alertas['exito'][] = 'Hemos enviado las instrucciones a tu email';
+    
+                    $emailObj = new Email($usuario->email, $usuario->nombre, $usuario->token);
+                    $emailObj->enviarInstrucciones();
+    
+                    $alertas['exito'][] = 'Hemos enviado las instrucciones para restablecer tu contraseña a tu correo.';
+                } elseif ($profesor && $profesor->confirmado) {
+                    // Profesor encontrado y confirmado
+                    $profesor->crearToken();
+                    $profesor->guardar();
+    
+                    $emailObj = new Email($profesor->email, $profesor->nombre, $profesor->token);
+                    $emailObj->enviarInstrucciones();
+    
+                    $alertas['exito'][] = 'Hemos enviado las instrucciones para restablecer tu contraseña a tu correo.';
+                } elseif ($estudiante && $estudiante->confirmado) {
+                    // estudiante encontrado y confirmado
+                    $estudiante->crearToken();
+                    $estudiante->guardar();
+    
+                    $emailObj = new Email($estudiante->email, $estudiante->nombre, $estudiante->token);
+                    $emailObj->enviarInstrucciones();
+    
+                    $alertas['exito'][] = 'Hemos enviado las instrucciones para restablecer tu contraseña a tu correo.';
                 } else {
-                 
-                    // Usuario::setAlerta('error', 'El Usuario no existe o no esta confirmado');
-
-                    $alertas['error'][] = 'El Usuario no existe o no esta confirmado';
+                    $alertas['error'][] = 'El Usuario/Profesor no existe o no está confirmado.';
                 }
             }
         }
-
-
-        // Muestra la vista
+    
         $router->render('auth/olvide', [
-            'titulo' => 'Olvide mi Password',
+            'titulo' => 'Olvidé mi Contraseña',
             'alertas' => $alertas
         ]);
     }
+    
 
     public static function reestablecer(Router $router) {
+        $alertas = [];
 
+        // Obtener el token de la URL
         $token = s($_GET['token']);
-
-        $token_valido = true;
-
-        if(!$token) header('Location: /');
-
-        // Identificar el usuario con este token
-        $usuario = Usuario::where('token', $token);
-
-        if(empty($usuario)) {
-            Usuario::setAlerta('error', 'Token No Válido, intenta de nuevo');
-            $token_valido = false;
+        if (!$token) {
+            header('Location: /');
+            return;
         }
 
+        // Buscar el token en todas las tablas
+        $usuario = Usuario::where('token', $token);
+        $profesor = Profesores::where('token', $token);
+        $estudiante = Estudiantes::where('token', $token);
 
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token_valido = !empty($usuario) || !empty($profesor) || !empty($estudiante);
 
-            // Añadir el nuevo password
-            $usuario->sincronizar($_POST);
+        if (!$token_valido) {
+            Usuario::setAlerta('error', 'Token no válido, intenta de nuevo.');
+        }
 
-            // Validar el password
-            $alertas = $usuario->validarPassword();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Determinar el objeto para restablecer la contraseña
+            $objeto = $usuario ?? $profesor ?? $estudiante;
 
-            if(empty($alertas)) {
-                // Hashear el nuevo password
-                $usuario->hashPassword();
+            if ($objeto) {
+                // Sincronizar el nuevo password con el objeto
+                $objeto->sincronizar($_POST);
 
-                // Eliminar el Token
-                $usuario->token = null;
+                // Validar el password
+                $alertas = $objeto->validarPassword();
 
-                // Guardar el usuario en la BD
-                $resultado = $usuario->guardar();
+                if (empty($alertas)) {
+                    // Hashear el nuevo password
+                    $objeto->hashPassword();
 
-                // Redireccionar
-                if($resultado) {
-                    header('Location: /login');
+                    // Eliminar el token
+                    $objeto->token = null;
+
+                    // Guardar el objeto en la base de datos
+                    $resultado = $objeto->guardar();
+
+                    // Redireccionar al login si se guardó con éxito
+                    if ($resultado) {
+                        header('Location: /login');
+                    }
                 }
             }
         }
 
-        $alertas = Usuario::getAlertas();
-        
-        // Muestra la vista
+        // Mostrar la vista con las alertas
         $router->render('auth/reestablecer', [
-            'titulo' => 'Reestablecer Password',
+            'titulo' => 'Reestablecer Contraseña',
             'alertas' => $alertas,
             'token_valido' => $token_valido
         ]);
     }
 
-    public static function mensaje(Router $router) {
+    public static function confirmar(Router $router) {
+        $alertas = [];
 
+        $token = $_GET['token'] ?? null;
+
+        if (!$token) {
+            header('Location: /');
+            return;
+        }
+
+        // Buscar usuario, profesor o estudiante por token
+        $usuario = Usuario::where('token', $token);
+        $profesor = Profesores::where('token', $token);
+        $estudiante = Estudiantes::where('token', $token);
+
+        if ($usuario) {
+            $usuario->confirmado = true;
+            $usuario->token = '';
+            $usuario->guardar();
+            $alertas['exito'][] = 'Cuenta confirmada exitosamente.';
+        } elseif ($profesor) {
+            $profesor->confirmado = true;
+            $profesor->token = '';
+            $profesor->guardar();
+            $alertas['exito'][] = 'Cuenta confirmada exitosamente.';
+        } elseif ($estudiante) {
+            $estudiante->confirmado = true;
+            $estudiante->token = '';
+            $estudiante->guardar();
+            $alertas['exito'][] = 'Cuenta confirmada exitosamente.';
+        } else {
+            $alertas['error'][] = 'Token inválido.';
+        }
+
+        // Mostrar la vista con las alertas
+        $router->render('auth/confirmar', [
+            'titulo' => 'Confirmar Cuenta',
+            'alertas' => $alertas
+        ]);
+    }
+
+    public static function mensaje(Router $router) {
         $router->render('auth/mensaje', [
             'titulo' => 'Cuenta Creada Exitosamente'
         ]);
     }
-
-    public static function confirmar(Router $router) {
-        
-        $token = s($_GET['token']);
-
-        if(!$token) header('Location: /');
-
-        // Encontrar al usuario con este token
-        $usuario = Usuario::where('token', $token);
-
-        if(empty($usuario)) {
-            // No se encontró un usuario con ese token
-            Usuario::setAlerta('error', 'Token No Válido, la cuenta no se confirmó');
-        } else {
-            // Confirmar la cuenta
-            $usuario->confirmado = 1;
-            $usuario->token = '';
-            unset($usuario->password2);
-            
-            // Guardar en la BD
-            $usuario->guardar();
-
-            Usuario::setAlerta('exito', 'Cuenta Comprobada éxitosamente');
-        }
-
-     
-
-        $router->render('auth/confirmar', [
-            'titulo' => 'Confirma tu cuenta DevWebcamp',
-            'alertas' => Usuario::getAlertas()
-        ]);
-    }
 }
+

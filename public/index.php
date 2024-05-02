@@ -6,10 +6,19 @@ use MVC\Router;
 use Controllers\AuthController;
 use Controllers\DashboardController;
 use Controllers\EstadisticasController;
+use Controllers\EstadisticasEstuController;
+use Controllers\EstadisticasProfeController;
+use Controllers\EstudianteController;
+use Controllers\EstudiantesdashboardController;
 use Controllers\EventosController;
+use Controllers\EventosEstuController;
+use Controllers\EventosProfeController;
 use Controllers\GradosController;
+use Controllers\ProfedashboardController;
 use Controllers\ProfesoresController;
- 
+use Controllers\TareasController;
+use Controllers\TareasEstuController;
+
 $router = new Router();
 
 
@@ -36,6 +45,7 @@ $router->get('/confirmar-cuenta', [AuthController::class, 'confirmar']);
 
 // Area Administracion
 $router->get('/admin/dashboard', [DashboardController::class, 'index']);
+
 
 $router->get('/admin/profesores', [ProfesoresController::class, 'index']);
 $router->get('/admin/profesores/matematica/crear', [ProfesoresController::class, 'crearMatematicas']);
@@ -83,8 +93,48 @@ $router->get('/admin/profesores/informatica/informatica', [ProfesoresController:
 $router->get('/admin/eventos', [EventosController::class, 'index']);
 
 $router->get('/admin/grados', [GradosController::class, 'index']);
+$router->get('/admin/grados/Noveno/crear', [GradosController::class, 'crearNoveno']);
+$router->post('/admin/grados/Noveno/crear', [GradosController::class, 'crearNoveno']);
+$router->get('/admin/grados/Noveno/editar', [GradosController::class, 'editarNoveno']);
+$router->post('/admin/grados/Noveno/editar', [GradosController::class, 'editarNoveno']);
+$router->post('/admin/grados/Noveno/eliminar', [GradosController::class, 'eliminarNoveno']);
+$router->get('/admin/grados/Noveno/noveno', [GradosController::class, 'noveno']);
+
+$router->get('/admin/grados/Decimo/crear', [GradosController::class, 'crearDecimo']);
+$router->post('/admin/grados/Decimo/crear', [GradosController::class, 'crearDecimo']);
+$router->get('/admin/grados/Decimo/editar', [GradosController::class, 'editarDecimo']);
+$router->post('/admin/grados/Decimo/editar', [GradosController::class, 'editarDecimo']);
+$router->post('/admin/grados/Decimo/eliminar', [GradosController::class, 'eliminarDecimo']);
+$router->get('/admin/grados/Decimo/decimo', [GradosController::class, 'decimo']);
+
+$router->get('/admin/grados/Once/crear', [GradosController::class, 'crearOnce']);
+$router->post('/admin/grados/Once/crear', [GradosController::class, 'crearOnce']);
+$router->get('/admin/grados/Once/editar', [GradosController::class, 'editarOnce']);
+$router->post('/admin/grados/Once/editar', [GradosController::class, 'editarOnce']);
+$router->post('/admin/grados/Once/eliminar', [GradosController::class, 'eliminarOnce']);
+$router->get('/admin/grados/Once/once', [GradosController::class, 'once']);
 
 $router->get('/admin/estadisticas', [EstadisticasController::class, 'index']);
 
+// Area Profesor
+$router->get('/profe/dashboard', [ProfedashboardController::class, 'index']);
+
+$router->get('/profe/tareas', [TareasController::class, 'index']);
+
+$router->get('/profe/eventos', [EventosProfeController::class, 'index']);
+
+$router->get('/profe/estadisticas', [EstadisticasProfeController::class, 'index']);
+
+
+// Area Estudiante
+$router->get('/estudiante/dashboard', [EstudiantesdashboardController::class, 'index']);
+
+
+
+$router->get('/estudiante/tareas', [TareasEstuController::class, 'index']);
+
+$router->get('/estudiante/eventos', [EventosEstuController::class, 'index']);
+
+$router->get('/estudiante/estadisticas', [EstadisticasEstuController::class, 'index']);
 
 $router->comprobarRutas();
